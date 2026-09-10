@@ -77,6 +77,13 @@ async def test_allocation_is_crypto_only_and_logged(tmp_path):
     assert "allocation" in kinds and "cost" in kinds
 
 
+async def test_run_allocation_skips_the_allocator_model_call(tmp_path):
+    desk = build(tmp_path)
+    desk.allocator._client = FakeClient([{"crypto_pct": 0.2, "stocks_pct": 0.8, "reason": "ignored"}])
+    await desk.run_allocation()
+    assert desk.allocator._client.calls == []
+
+
 async def test_exit_pass_holds_and_logs_an_action(tmp_path):
     desk = build(tmp_path)
     desk.positions = [Position(market=Market.CRYPTO, symbol="WIF2", quantity=1000,
