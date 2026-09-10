@@ -6,6 +6,7 @@ Runs once a day. The desk no longer trades stocks, so allocation is fixed at
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from ..models import Allocation
@@ -19,15 +20,18 @@ class Allocator:
 
     def __init__(self, config: dict[str, Any], client=None, costs=None):
         self.config = config or {}
-        self.client = client
+        self._client = client
         self.costs = costs
+        self.model = "code-only"
+        self.live_search = False
         self.memory = None
 
     def fixed_allocation(self) -> dict[str, Any]:
         return dict(_CRYPTO_ONLY)
 
-    def allocate(self, risk: dict[str, Any] | None = None) -> Allocation:
+    async def allocate(self, risk: dict[str, Any] | None = None) -> Allocation:
         """Return the crypto-only allocation, clamped to the configured ceilings."""
+        await asyncio.sleep(0)
         result = self.fixed_allocation()
         risk = risk or (self.config.get("risk", {}) or {})
         allocation = Allocation(

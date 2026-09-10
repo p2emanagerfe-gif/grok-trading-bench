@@ -68,7 +68,7 @@ class TradingDesk:
         self.crypto_executor = CryptoExecutor(config)
 
         # shared
-        self.allocator = agent(Allocator)
+        self.allocator = Allocator(config, costs=self.costs)
         self.exit_manager = agent(ExitManager)
 
         # Only the agents that decide get history; the analysts describe what is
@@ -294,7 +294,7 @@ class TradingDesk:
 
     async def run_allocation(self) -> Allocation:
         self.refresh_memory()
-        allocation = self.allocator.allocate(risk=self.config.get("risk"))
+        allocation = await self.allocator.allocate(risk=self.config.get("risk"))
         applied = self.risk.set_allocation(allocation)
         self.log.allocation(round(applied.crypto_pct, 4), round(applied.stocks_pct, 4),
                             allocation.reason)

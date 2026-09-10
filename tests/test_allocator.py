@@ -13,9 +13,9 @@ def test_allocator_helper_is_hardwired_to_crypto_only(client_factory):
     assert client.calls == []
 
 
-def test_allocate_returns_a_crypto_only_allocation(client_factory):
+async def test_allocate_returns_a_crypto_only_allocation(client_factory):
     client = client_factory({"crypto_pct": 0.2, "stocks_pct": 0.8})
-    allocation = Allocator(CONFIG, client=client).allocate()
+    allocation = await Allocator(CONFIG, client=client).allocate()
     assert isinstance(allocation, Allocation)
     assert allocation.crypto_pct == 1.0
     assert allocation.stocks_pct == 0.0
