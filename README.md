@@ -159,7 +159,7 @@ One JSONL line per event, append-only, never rewritten.
 | `buy` | market, symbol, score, all_agent_scores, amount, tx_id |
 | `skip` | market, symbol, reason, detail |
 | `close` | market, symbol, pnl, hold_time |
-| `action` | symbol, action, reason |
+| `action` | symbol, action, reason, market, pnl_pct |
 | `allocation` | crypto_pct, stocks_pct (always `0` in crypto-only mode), reason |
 | `cost` | cumulative calls, spend, cache hit rate, sources, per-agent |
 
