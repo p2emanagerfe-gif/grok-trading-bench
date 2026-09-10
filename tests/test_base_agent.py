@@ -8,7 +8,6 @@ from src.crypto.auditor import Auditor
 from src.crypto.crypto_checker import CryptoChecker
 from src.crypto.crypto_pulse import CryptoPulse
 from src.crypto.narrative import Narrative
-from src.shared.allocator import Allocator
 from tests.conftest import CONFIG, FakeResponse
 
 
@@ -84,10 +83,6 @@ def test_narrative_uses_x_only_search():
     search = Narrative(CONFIG).build_request({"mint": "M", "symbol": "WIF"})["search_parameters"]
     assert search["mode"] == "on"
     assert search["sources"] == [{"type": "x", "post_view_count": 1000}]
-
-
-def test_agents_that_need_no_retrieval_send_none():
-    assert "search_parameters" not in Allocator(CONFIG).build_request({})
 
 
 def test_live_search_can_be_switched_off_globally():

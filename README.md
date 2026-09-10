@@ -78,6 +78,7 @@ Current defaults:
 |---|---|---|
 | `fast` | `grok-4.3` | auditor, narrative, crypto pulse, exit manager |
 | `deep` | `grok-4.6` | crypto checker |
+| `code` | — | scout, allocator |
 
 Live search is enabled for the agents that need current market/news/social data.
 Every call records billed usage, and `scripts/replay.py` reports PnL net of

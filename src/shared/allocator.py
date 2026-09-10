@@ -8,30 +8,20 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..base_agent import GrokAgent
 from ..models import Allocation
 
 _CRYPTO_ONLY = {"crypto_pct": 1.0, "stocks_pct": 0.0, "reason": "crypto_only_mode"}
 
 
-class Allocator(GrokAgent):
+class Allocator:
     name = "allocator"
-    model_tier = "fast"
-    PROMPT = "Crypto-only allocator."
-    SCHEMA = None
     SEARCH = None
 
-    def facts(self, payload: dict[str, Any]) -> dict[str, Any]:
-        return {"mode": "crypto_only", **(payload or {})}
-
-    def memory_context(self, payload: dict[str, Any]) -> dict[str, Any]:
-        return {}
-
-    def postprocess(self, data: dict[str, Any]) -> dict[str, Any]:
-        return self.fixed_allocation()
-
-    def fallback(self) -> dict[str, Any]:
-        return self.fixed_allocation()
+    def __init__(self, config: dict[str, Any], client=None, costs=None):
+        self.config = config or {}
+        self.client = client
+        self.costs = costs
+        self.memory = None
 
     def fixed_allocation(self) -> dict[str, Any]:
         return dict(_CRYPTO_ONLY)
