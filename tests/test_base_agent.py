@@ -3,13 +3,12 @@
 import httpx
 import pytest
 
-from tests.conftest import CONFIG, FakeResponse
 from src.base_agent import CostTracker, GrokAgent, parse_json_response, schema
 from src.crypto.auditor import Auditor
 from src.crypto.crypto_checker import CryptoChecker
-from src.shared.allocator import Allocator
-from src.stocks.insider import Insider
-from src.stocks.radar import Radar
+from src.crypto.crypto_pulse import CryptoPulse
+from src.crypto.narrative import Narrative
+from tests.conftest import CONFIG, FakeResponse
 
 
 class Probe(GrokAgent):
@@ -20,8 +19,6 @@ class Probe(GrokAgent):
     def fallback(self):
         return {"ok": False, "why": "fallback"}
 
-
-# --- request assembly ------------------------------------------------------------
 
 def test_strict_json_schema_is_attached():
     body = Probe(CONFIG).build_request({"a": 1})
@@ -58,7 +55,6 @@ def test_static_prompt_comes_first_so_the_prefix_caches():
 
 
 def test_reasoning_effort_only_goes_to_grok_43():
-    # grok-4.3 is the only model that accepts the parameter
     assert Probe(CONFIG).build_request(None)["reasoning_effort"] == "none"
 
     deep = {"grok": {**CONFIG["grok"], "models": {"fast": "grok-4.6"}, "reasoning_effort": {"fast": "high"}}}
@@ -71,35 +67,27 @@ def test_legacy_model_keys_still_resolve():
 
 
 def test_model_defaults_split_the_tiers():
-    bare = Probe({})
-    assert bare.model == "grok-4.3"
+    assert Probe({}).model == "grok-4.3"
     assert CryptoChecker({}).model == "grok-4.6"
 
 
-# --- live search -------------------------------------------------------------------
-
-def test_search_parameters_are_sent_when_an_agent_declares_them():
-    body = Radar(CONFIG).build_request({"symbol": "ACME"})
+def test_crypto_pulse_search_parameters_are_windowed():
+    body = CryptoPulse(CONFIG).build_request(None)
     search = body["search_parameters"]
     assert search["mode"] == "on"
     assert {s["type"] for s in search["sources"]} == {"news", "x", "web"}
-    assert "from_date" in search       # radar's prompt asks for two weeks
+    assert "from_date" in search
 
 
-def test_insider_whitelists_primary_filing_sources():
-    search = Insider(CONFIG).build_request({"symbol": "ACME"})["search_parameters"]
-    web = next(s for s in search["sources"] if s["type"] == "web")
-    assert "sec.gov" in web["allowed_websites"]
-    assert len(web["allowed_websites"]) <= 5   # API caps the whitelist at 5
-
-
-def test_agents_that_need_no_retrieval_send_none():
-    assert "search_parameters" not in Allocator(CONFIG).build_request({})
+def test_narrative_uses_x_only_search():
+    search = Narrative(CONFIG).build_request({"mint": "M", "symbol": "WIF"})["search_parameters"]
+    assert search["mode"] == "on"
+    assert search["sources"] == [{"type": "x", "post_view_count": 1000}]
 
 
 def test_live_search_can_be_switched_off_globally():
     config = {"grok": {**CONFIG["grok"], "live_search": False}}
-    assert "search_parameters" not in Radar(config).build_request({"symbol": "A"})
+    assert "search_parameters" not in Narrative(config).build_request({"mint": "M", "symbol": "A"})
 
 
 def test_x_source_carries_an_engagement_floor():
@@ -108,13 +96,11 @@ def test_x_source_carries_an_engagement_floor():
     assert x["post_view_count"] > 0
 
 
-# --- retry policy ---------------------------------------------------------------------
-
 async def test_a_400_is_not_retried(client_factory, no_sleep):
     client = client_factory(FakeResponse("", 400))
     result = await Probe(CONFIG, client=client).run()
     assert result["why"] == "fallback"
-    assert len(client.calls) == 1     # our bug; repeating it three times is waste
+    assert len(client.calls) == 1
 
 
 async def test_a_429_is_retried(client_factory, no_sleep):
@@ -153,19 +139,17 @@ def test_backoff_is_jittered_and_bounded():
     agent = Probe(CONFIG)
     exc = httpx.TimeoutException("slow")
     delays = [agent._retry_delay(6, exc) for _ in range(20)]
-    assert len(set(delays)) > 1                 # jitter, so retries do not sync up
-    assert all(15.0 <= d <= 30.0 for d in delays)   # 2**6 clamped to the 30s ceiling
+    assert len(set(delays)) > 1
+    assert all(15.0 <= d <= 30.0 for d in delays)
     early = [agent._retry_delay(1, exc) for _ in range(20)]
     assert all(1.0 <= d <= 2.0 for d in early)
 
-
-# --- cost accounting ----------------------------------------------------------------
 
 USAGE = {
     "prompt_tokens": 1000,
     "completion_tokens": 200,
     "num_sources_used": 12,
-    "cost_in_usd_ticks": 25_000_000_000,        # 1e10 ticks == $1
+    "cost_in_usd_ticks": 25_000_000_000,
     "prompt_tokens_details": {"cached_tokens": 400},
     "completion_tokens_details": {"reasoning_tokens": 50},
 }
@@ -210,14 +194,10 @@ async def test_usage_absent_does_not_break_accounting(client_factory):
 
 
 async def test_citations_are_captured(client_factory):
-    agent = Probe(CONFIG, client=client_factory(
-        FakeResponse('{"ok": true}', citations=["https://sec.gov/x", "https://x.com/y"])
-    ))
+    agent = Probe(CONFIG, client=client_factory(FakeResponse('{"ok": true}', citations=["https://x.com/y"])))
     await agent.run()
-    assert agent.last_citations == ["https://sec.gov/x", "https://x.com/y"]
+    assert agent.last_citations == ["https://x.com/y"]
 
-
-# --- parsing still guards the json_object path ----------------------------------------
 
 def test_parser_handles_fences_and_prose():
     assert parse_json_response('```json\n{"a": 1}\n```') == {"a": 1}

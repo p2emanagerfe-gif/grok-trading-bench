@@ -103,6 +103,6 @@ CONFIG: dict[str, Any] = {
         "timeout_seconds": 5,
         "max_retries": 3,
     },
-    "risk": {"crypto_max_pct": 0.7, "stock_max_pct": 0.7},
-    "pulse": {"crypto_cache_minutes": 15, "market_cache_minutes": 30},
+    "risk": {"crypto_max_pct": 1.0, "stock_max_pct": 0.0},
+    "pulse": {"crypto_cache_minutes": 15},
 }
