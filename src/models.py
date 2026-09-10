@@ -161,8 +161,8 @@ class Position(BaseModel):
 class Allocation(BaseModel):
     """Budget split between the two markets."""
 
-    crypto_pct: float = 0.5
-    stocks_pct: float = 0.5
+    crypto_pct: float = 1.0
+    stocks_pct: float = 0.0
     reason: str = ""
     decided_at: datetime = Field(default_factory=_utcnow)
 
@@ -172,7 +172,7 @@ class Allocation(BaseModel):
         stocks = max(0.0, min(self.stocks_pct, stock_max_pct))
         total = crypto + stocks
         if total <= 0:
-            crypto, stocks, total = 0.5, 0.5, 1.0
+            crypto, stocks, total = 1.0, 0.0, 1.0
         return Allocation(
             crypto_pct=crypto / total,
             stocks_pct=stocks / total,

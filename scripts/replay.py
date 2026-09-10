@@ -150,10 +150,7 @@ def render(summary: dict) -> str:
 
     if summary["allocations"]:
         latest = summary["allocations"][-1]
-        lines.append(
-            f"  Latest allocation: crypto {float(latest.get('crypto_pct', 0)):.0%} / "
-            f"stocks {float(latest.get('stocks_pct', 0)):.0%}"
-        )
+        lines.append(f"  Latest allocation: crypto {float(latest.get('crypto_pct', 0)):.0%}")
         if latest.get("reason"):
             lines.append(f"    reason: {latest['reason']}")
         lines.append("")
@@ -166,7 +163,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Replay the desk event log")
     parser.add_argument("--log", default="logs/desk.jsonl")
     parser.add_argument("--days", type=int, default=None, help="only the last N days")
-    parser.add_argument("--market", choices=["crypto", "stocks"], default=None)
+    parser.add_argument("--market", choices=["crypto"], default=None)
     args = parser.parse_args()
 
     records = read_log(args.log)

@@ -8,7 +8,6 @@ in this file asks a model for permission.
 from __future__ import annotations
 
 import logging
-from collections import Counter
 from datetime import date
 from typing import Any
 
@@ -18,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 class RiskManager:
-    """Budget, exposure and position sizing across crypto and stocks."""
+    """Budget, exposure and position sizing for the crypto-only desk."""
 
     def __init__(self, config: dict[str, Any]):
         risk = (config or {}).get("risk", {}) or {}
@@ -26,16 +25,14 @@ class RiskManager:
         self.daily_loss_limit_usd = float(risk.get("daily_loss_limit_usd", 200.0))
         self.max_open_total = int(risk.get("max_open_total", 10))
         self.max_open_crypto = int(risk.get("max_open_crypto", 6))
-        self.max_open_stocks = int(risk.get("max_open_stocks", 6))
-        self.max_per_sector = int(risk.get("max_per_sector", 2))
         self.crypto_max_pct = float(risk.get("crypto_max_pct", 1.0))
-        self.stock_max_pct = float(risk.get("stock_max_pct", 1.0))
+        self.stock_max_pct = float(risk.get("stock_max_pct", 0.0))
         self.max_position_pct_of_market = float(risk.get("max_position_pct_of_market", 0.15))
         self.max_position_pct_of_remaining_loss = float(
             risk.get("max_position_pct_of_remaining_loss", 0.25)
         )
 
-        self.allocation = Allocation()
+        self.allocation = Allocation(crypto_pct=1.0, stocks_pct=0.0, reason="crypto_only_mode")
         self.realized_pnl_today = 0.0
         self.deployed_usd: dict[Market, float] = {Market.CRYPTO: 0.0, Market.STOCKS: 0.0}
         self.session_date = date.today()
@@ -96,6 +93,9 @@ class RiskManager:
         amount_usd: float = 0.0,
     ) -> tuple[bool, str]:
         """Return (allowed, reason). `reason` is 'ok' when allowed."""
+        if market == Market.STOCKS:
+            return False, "market_disabled"
+
         if self.daily_loss_breached():
             return False, "daily_loss_limit_reached"
 
@@ -105,13 +105,6 @@ class RiskManager:
         same_market = [p for p in positions if p.market == market]
         if market == Market.CRYPTO and len(same_market) >= self.max_open_crypto:
             return False, "max_open_crypto"
-        if market == Market.STOCKS and len(same_market) >= self.max_open_stocks:
-            return False, "max_open_stocks"
-
-        if market == Market.STOCKS and sector and sector != "unknown":
-            per_sector = Counter(p.sector for p in same_market)
-            if per_sector[sector] >= self.max_per_sector:
-                return False, "max_per_sector"
 
         if self.remaining_market_budget(market) <= 0:
             return False, "market_budget_exhausted"

@@ -7,7 +7,7 @@ from src.models import ExitAction, Market, Position
 from src.shared.exit_manager import ExitManager
 
 POSITION = Position(
-    market=Market.STOCKS, symbol="ACME", quantity=10, entry_price=50.0,
+    market=Market.CRYPTO, symbol="BONK", quantity=10, entry_price=50.0,
     current_price=57.0, amount_usd=500.0, stop_price=46.0, take_profit_price=60.0,
     opened_at=datetime.now(timezone.utc) - timedelta(hours=6),
 )
@@ -70,7 +70,7 @@ async def test_prompt_carries_the_position_state(client_factory):
     client = client_factory({"action": "HOLD"})
     await ExitManager(CONFIG, client=client).run(POSITION)
     sent = client.calls[0]["json"]["messages"][1]["content"]
-    assert "ACME" in sent and "pnl_pct" in sent and "hold_time_hours" in sent
+    assert "BONK" in sent and "pnl_pct" in sent and "hold_time_hours" in sent
 
 
 async def test_works_on_a_crypto_position_too(client_factory):

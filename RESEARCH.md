@@ -126,28 +126,6 @@ observation window; only a token that survives the window is scored. `marketCapS
 and `vSolInBondingCurve` are denominated in SOL, so a SOL/USD rate is required to
 compare against USD thresholds.
 
-## Alpaca
-
-The movers endpoint returns `Mover{symbol, percent_change, change, price}` and
-most-actives returns `ActiveStock{symbol, volume, trade_count}`. **Neither carries
-sector, market cap, or average volume** — three of the screener's filters. The
-old `_fetch_alpaca` also reconstructed `prev_close` arithmetically from
-`percent_change`, which is lossy.
-
-Fix: the screener now composes most-actives + movers for the candidate set, the
-**snapshot** endpoint for real `previous_daily_bar.close` and same-day volume, and
-20 daily bars for a true `avg_volume`. Market cap and sector have no Alpaca
-source, so their filters are skipped when the datum is absent instead of
-rejecting every candidate.
-
-Execution constraints confirmed:
-
-- bracket orders **cannot** be fractional and do not support extended hours;
-  `time_in_force` must be DAY or GTC. Integer-share sizing was already right.
-- HTTP **403** on submit usually means the order was blocked to avoid flagging
-  Pattern Day Trader on an account under $25k equity. Now caught and logged as a
-  distinct skip reason rather than a generic failure.
-
 ## Prior art
 
 - **TradingAgents** (arXiv 2412.20138, TauricResearch) — analyst team, bull/bear
@@ -176,8 +154,4 @@ is off by default (`debate.enabled`) because it doubles generator calls.
 - https://docs.x.ai/developers/tools/x-search
 - https://docs.x.ai/developers/models
 - https://pumpportal.fun/data-api/real-time/
-- https://alpaca.markets/sdks/python/api_reference/data/models.html
-- https://alpaca.markets/sdks/python/api_reference/data/stock/screener.html
-- https://docs.alpaca.markets/us/docs/fractional-trading
-- https://alpaca.markets/learn/how-to-fix-common-trading-api-errors-at-alpaca
 - https://arxiv.org/abs/2412.20138
