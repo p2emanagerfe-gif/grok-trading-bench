@@ -26,7 +26,7 @@ class RiskManager:
         self.max_open_total = int(risk.get("max_open_total", 10))
         self.max_open_crypto = int(risk.get("max_open_crypto", 6))
         self.crypto_max_pct = float(risk.get("crypto_max_pct", 1.0))
-        self.stock_max_pct = float(risk.get("stock_max_pct", 0.0))
+        self.stock_max_pct = 0.0
         self.max_position_pct_of_market = float(risk.get("max_position_pct_of_market", 0.15))
         self.max_position_pct_of_remaining_loss = float(
             risk.get("max_position_pct_of_remaining_loss", 0.25)

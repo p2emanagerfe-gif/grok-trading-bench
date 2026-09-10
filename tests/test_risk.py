@@ -40,6 +40,13 @@ def test_allocation_is_clamped_to_crypto_only():
     assert r.allocation.stocks_pct == 0.0
 
 
+def test_stock_budget_stays_disabled_even_if_config_requests_it():
+    r = RiskManager({"risk": {**CONFIG["risk"], "stock_max_pct": 0.9}})
+    r.set_allocation(Allocation(crypto_pct=0.2, stocks_pct=0.8))
+    assert r.market_budget(Market.CRYPTO) == 2000.0
+    assert r.market_budget(Market.STOCKS) == 0.0
+
+
 def test_open_is_allowed_on_an_empty_crypto_book():
     assert rm().can_open(Market.CRYPTO, []) == (True, "ok")
 

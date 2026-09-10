@@ -106,10 +106,11 @@ async def test_refresh_positions_drops_non_crypto_entries(tmp_path):
 
 async def test_manage_position_refuses_non_crypto_entries(tmp_path):
     desk = build(tmp_path)
-    decision = await desk.manage_position(
-        Position(market=Market.STOCKS, symbol="ACME", quantity=1, entry_price=1.0)
-    )
+    position = Position(market=Market.STOCKS, symbol="ACME", quantity=1, entry_price=1.0)
+    desk.positions = [position]
+    decision = await desk.manage_position(position)
     assert decision["reason"] == "market_disabled"
+    assert desk.positions == []
     records = [json.loads(line) for line in open(tmp_path / "desk.jsonl", encoding="utf-8")]
     assert records[-1]["reason"] == "market_disabled"
 

@@ -211,6 +211,7 @@ class TradingDesk:
 
     async def manage_position(self, position: Position) -> dict[str, Any]:
         if position.market != Market.CRYPTO:
+            self.positions = [p for p in self.positions if p is not position]
             self.log.skip(position.market.value, position.symbol, "market_disabled")
             return {"action": "HOLD", "reason": "market_disabled", "confidence": 0.0}
 
