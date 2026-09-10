@@ -28,12 +28,12 @@ class Allocator(GrokAgent):
         return {}
 
     def postprocess(self, data: dict[str, Any]) -> dict[str, Any]:
-        return dict(_CRYPTO_ONLY)
+        return self.fixed_allocation()
 
     def fallback(self) -> dict[str, Any]:
-        return dict(_CRYPTO_ONLY)
+        return self.fixed_allocation()
 
-    async def run(self, payload: Any = None) -> dict[str, Any]:
+    def fixed_allocation(self) -> dict[str, Any]:
         return dict(_CRYPTO_ONLY)
 
     async def allocate(
@@ -44,9 +44,7 @@ class Allocator(GrokAgent):
         risk: dict[str, Any] | None = None,
     ) -> Allocation:
         """Return the crypto-only allocation, clamped to the configured ceilings."""
-        result = await self.run(
-            {"crypto_pulse": crypto_pulse, "market_pulse": market_pulse, "weekly_pnl_usd": weekly_pnl}
-        )
+        result = self.fixed_allocation()
         risk = risk or (self.config.get("risk", {}) or {})
         allocation = Allocation(
             crypto_pct=result["crypto_pct"],

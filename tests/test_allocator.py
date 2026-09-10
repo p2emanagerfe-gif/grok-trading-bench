@@ -6,9 +6,9 @@ CRYPTO_PULSE = {"regime": "risk_on", "go_signal": 0.8}
 PNL = {"crypto": 120.0}
 
 
-async def test_allocator_run_is_hardwired_to_crypto_only(client_factory):
+def test_allocator_helper_is_hardwired_to_crypto_only(client_factory):
     client = client_factory({"crypto_pct": 0.2, "stocks_pct": 0.8})
-    result = await Allocator(CONFIG, client=client).run({})
+    result = Allocator(CONFIG, client=client).fixed_allocation()
     assert result == {"crypto_pct": 1.0, "stocks_pct": 0.0, "reason": "crypto_only_mode"}
     assert client.calls == []
 
