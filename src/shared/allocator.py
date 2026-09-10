@@ -36,7 +36,7 @@ class Allocator(GrokAgent):
     def fixed_allocation(self) -> dict[str, Any]:
         return dict(_CRYPTO_ONLY)
 
-    async def allocate(self, risk: dict[str, Any] | None = None) -> Allocation:
+    def allocate(self, risk: dict[str, Any] | None = None) -> Allocation:
         """Return the crypto-only allocation, clamped to the configured ceilings."""
         result = self.fixed_allocation()
         risk = risk or (self.config.get("risk", {}) or {})

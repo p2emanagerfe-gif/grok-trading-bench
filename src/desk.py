@@ -294,7 +294,7 @@ class TradingDesk:
 
     async def run_allocation(self) -> Allocation:
         self.refresh_memory()
-        allocation = await self.allocator.allocate(risk=self.config.get("risk"))
+        allocation = self.allocator.allocate(risk=self.config.get("risk"))
         applied = self.risk.set_allocation(allocation)
         self.log.allocation(round(applied.crypto_pct, 4), round(applied.stocks_pct, 4),
                             allocation.reason)
